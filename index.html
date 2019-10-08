@@ -5,136 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Shorthand JSON</title>
-
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         textarea {
-            width: 44%;
+            width: 44vw;
             height: 500px;
             float: left;
-            margin: 100px 2% 0 2%;
+            clear: none;
+            display: block;
+            margin: 100px 2vw 0 2vw;
             background: #324047;
             font-size: 16px;
             color: white;
         }
 
         body {
+            width: 100vw;
             background: #273238;
+            margin: 0;
+            padding: 2vw;
+            float: left;
         }
     </style>
 </head>
 <body>
-    <textarea id="input">>foo:bar</textarea>
+    <textarea id="input"></textarea>
     <textarea id="output"></textarea>
-
-    <script>
-        var outputJson = null;
-        var inputElem = document.querySelector('#input');
-        var outputElem = document.querySelector('#output');
-        var matchNumber = /^\-?\d+(\.\d*)?$/gi;                 // test for integers and decimals, including negative numbers (TODO: allow scientific notation numbers)
-        var matchBoolean = /^(true|false)$/g;                   // test for boolean values (lowercase only)
-        var matchNull = /^null$/g;                              // test for a null value (lowercase only)
-        
-        function matchObject(input) {
-            var match = /^(?<open>\>)(?<body>.*)$/gi;           // regex to look for a string containing a ">" (i.e. the input is enclosed in an object)
-            var output = match.exec(input);                     // return an array of all capture groups (accessed via "output.groups"), or return null if none are found
-            console.log(output);                                // debugging
-
-            if (output !== null) {                              // if the output was enclosed in an object
-                return `{${output.group.body}}`;                    // replace the ">" with "{" and "}" on either end and return it
-            } else {                                            // if the output was not enclosed in an object
-                return null;                                        // return null
-            }
-        }
-
-        function matchKeyValuePair(input) {
-            var match = /^(?<key>\w\d*)\:(?<value>\w\d*)$/gi;   // regex to look for a "key:value" pair
-            var output = match.exec(input);                     // return an array of all capture groups (accessed via "output.groups"), or return null if none are found
-
-            if (!!output) {                                     // if a key/value pair is found in the capture group
-                var key = output.group.key;                         // shortcut for referencing the key
-                var value = output.group.value;                     // shortcut for referencing the value
-
-                if (!!matchNumber.exec(value)) {                    // if the value is a number
-                    return `"${key}":${value}`;                         // return the formatted key/value pair
-                } else if (!!matchBoolean.exec(value)) {            // if the value is a boolean
-                    return `"${key}":${value}`;                         // return the formatted key/value pair
-                } else if (!!matchNull.exec(value)) {               // if the value is null
-                    return `"${key}":${value}`;                         // return the formatted key/value pair
-                } else {                                            // if the value is a string (this includes key/value pairs where the value was casted from a number/boolean/null to a string)
-                    return `"${key}":"${value}"`;                       // return the formatted key/value pair
-                }
-            } else {                                            // if no key/value pair is found
-                return null;                                        // return null
-            }
-        }
-
-        function matchArray(input) {
-            var match = /^(?<open>\#)(?<body>.*)$/gi;           // regex to look for a string containing a "#" (i.e. the input is enclosed in an array)
-            var output = match.exec(input);                     // return an array of all capture groups (accessed via "output.groups"), or return null if none are found
-            console.log(output);                                // debugging
-
-            if (output !== null) {                              // if the output was enclosed in an array
-                return `[${output.group.body}]`                     // replace the "#" with "[" and "]" on either end and return it
-            } else {                                            // if the output was not enclosed in an array
-                return null;                                        // return null
-            }
-        }
-
-        function matchArrayItems(input) {
-            var match = /(?<item>[^,])/gi;                      // regex to look for every item in an array (ignoring each ",")
-            var output = match.exec(input);                     // return an array of all capture groups (accessed via "output.groups"), or return null if none are found
-
-            if (!!output) {                                     // if any array items are found in the capture group
-                var items = output.group.items;                     // shortcut for referencing the items
-                output.json = '';                                   // create a string to store the constructed JSON in
-
-                for (i = 0; i < items.length; i++) {                // iterate over each array item found in the capture group
-                    var item = items[i];                                // shortcut for referencing the current item
-
-                    if (matchNumber.exec(item)) {                       // if the item is a number
-                        output.json += item;                                // format the item and add it to the JSON
-                    } else if (!!matchBoolean.exec(item)) {             // if the item is a boolean
-                        output.json += item;                                // format the item and add it to the JSON
-                    } else if (!!matchNull.exec(item)) {                // if the item is null
-                        output.json += item;                                // format the item and add it to the JSON
-                    } else {                                            // if the item is a string
-                        output.json += `"${item}"`;                         // format the item and add it to the JSON
-                    }
-
-                    if (items.length - 1 !== i) {                       // if this isn't the last iteration of the loop
-                        output.json += ',';                                 // add a "," to the JSON
-                    }
-                }
-            } else {                                            // if the output was not a a set of array items
-                return null;                                        // return null
-            }
-        }
-
-        function buildJsonRecursively(input) {
-            var matchedObject = matchObject(input);                 // create a variable to hold the result of matchObject()
-            var matchedKeyValuePair = matchKeyValuePair(input);     // create a variable to hold the result of matchKeyValuePair()
-            var matchedArray = matchArray(input);                   // create a variable to hold the result of matchArray()
-            var matchedArrayItems = matchArrayItems(input);         // create a variable to hold the result of matchArrayItems()
-
-            // var anyMatch = matchedObject ||
-            //     matchedKeyValuePair ||
-            //     matchedArray ||
-            //     matchedArrayItems;
-
-            if (!!matchedObject) {                                       // if the input contains an object
-                buildJsonRecursively(matchedObject)
-            }
-        }
-
-        function writeOutputJson(output) {
-            outputElem.value = output;
-        }
-
-        inputElem.addEventListener('keydown', function (e) {
-            if (e.which === 9 || e.keyCode === 9) {
-                buildJsonRecursively(inputElem.value);
-            }
-        });
-    </script>
+    <script src="./main.js"></script>
 </body>
 </html>
